@@ -20,6 +20,8 @@ def response(flow: http.HTTPFlow) -> None:
             file.write(flow.request.url + "\n")
 
 ```
+#cp the mimproxy certaficate to the path that autorze certaficates
+
 
 use this pupteer:
 
