@@ -3,6 +3,15 @@ mitmproxy
 
 you can creat script using chatgpt for example this one will store the url that has sensative info
 
+you can use the script xss.py RCE.py ....etc .....
+
+note: in the RCE.py 
+
+you should use interacsh-client tool
+
+use interacsh-cleint --http-only -o file.txt
+and then should replace the server that the tool is generated in the rce payloads
+
 ```
 import re
 from mitmproxy import http
