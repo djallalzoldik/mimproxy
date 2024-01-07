@@ -79,7 +79,7 @@ class AlterResponse:
         return altered_flow
 
     def check_altered_reflection(self, flow):
-        pattern = re.compile(r'<h1>akira1</h1>', re.IGNORECASE)  # Define the pattern to match specific keywords
+        pattern = re.compile(r'<h1>akira1', re.IGNORECASE)  # Define the pattern to match specific keywords
         if pattern.search(flow.response.text):
             ctx.log.info(f"Altered parameter reflected in the response: {flow.request.url}")
             self.save_flow(flow)
