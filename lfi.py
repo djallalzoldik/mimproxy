@@ -85,7 +85,7 @@ class LFI:
         response_text = flow.response.get_text()
         redirect_patterns = [
             r'^(.+?):(.+?):(\d+):(\d+):(.*?):(\/.+?):(\/.+?)$',
-            r'^multi\(.*\)="(.+)" /.*$,
+            r'^multi\(.*\)="(.+)" /.*$',
             r'^default=multi\(.*\)$',
         ]
         for pattern in redirect_patterns:
