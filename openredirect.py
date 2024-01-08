@@ -213,7 +213,7 @@ class OpenRedirect:
             r'window\.location\.replace\s*\(\s*"https?:\/\/(www\.)?akira\.com"\s*\)',
             r'window\.location\.replace\s*\(\s*"https?:\/\/(www\.)?akira\.com"\s*\)',
             r'window\.location\.href\s*=\s*"/www.akira.com"',
-            r'window\.location\.href\s*=\s*"/akira.com"'',
+            r'window\.location\.href\s*=\s*"/akira.com"',
             r'window\.location\.replace\s*\(\s*"/www.akira.com"\s*\)',
             r'window\.location\.replace\s*\(\s*"/akira.com"\s*\)',
             r'href="https?:\/\/(www\.)?akira\.com"',
