@@ -146,7 +146,7 @@ class OpenRedirect:
             self.process_parameters_openred(flow)
 
     def process_parameters_openred(self, flow):
-        params = {}  
+        params = {}
         if flow.request.method == "GET":
             params = flow.request.query
         elif flow.request.method == "POST":
@@ -170,35 +170,33 @@ class OpenRedirect:
     def alter_and_replay_openred(self, original_flow, param, original_value):
         host = original_flow.request.host
         for template in self.payload_template_openred:
-            altered_flow_openred = template.format(host=host)  
-            altered_flow_openred = self.alter_request_openred(original_flow, param, altered_flow_openred)
-            if altered_flow_openred:
-                ctx.master.commands.call("replay.client", [altered_flow_openred])
+            altered_value = template.format(host=host)
+            altered_flow = self.alter_request_openred(original_flow, param, altered_value)
+            if altered_flow:
+                ctx.master.commands.call("replay.client", [altered_flow])
 
-    def alter_request_openred(self, original_flow, param, altered_flow_openred):
+    def alter_request_openred(self, original_flow, param, altered_value):
         new_request = copy.deepcopy(original_flow.request)
         if original_flow.request.method == "GET":
-            new_request.query[param] = altered_flow_openred
+            new_request.query[param] = altered_value
         else:
             content_type = new_request.headers.get("Content-Type", "")
             if "application/x-www-form-urlencoded" in content_type:
                 params = urllib.parse.parse_qs(new_request.get_text())
-                params[param] = [altered_flow_openred]
+                params[param] = [altered_value]
                 new_request.text = urllib.parse.urlencode(params, doseq=True)
             elif "application/json" in content_type:
                 try:
                     body = json.loads(new_request.get_text())
                     if param in body and isinstance(body[param], str):
-                        body[param] = altered_flow_openred
+                        body[param] = altered_value
                         new_request.text = json.dumps(body)
                 except json.JSONDecodeError:
                     pass
         new_request.headers[self.altered_header_openred] = "true"
-        altered_flow_openred = http.HTTPFlow(original_flow.client_conn, original_flow.server_conn)
-        altered_flow_openred.request = new_request
-        return altered_flow_openred
-        
-      
+        altered_flow = http.HTTPFlow(original_flow.client_conn, original_flow.server_conn)
+        altered_flow.request = new_request
+        return altered_flow
 
     def check_altered_reflection_openred(self, flow):
         # Corrected the indentation and the regex pattern
@@ -227,10 +225,13 @@ class OpenRedirect:
                 break
 
     def save_flow_openred(self, flow):
-        
         filename = os.path.join(self.flow_dir_openred, f"openredirect_request_{int(time.time())}.mitm")
         try:
             with open(filename, "wb") as file:
                 fw = FlowWriter(file)
                 fw.add(flow)
             ctx.log.info(f"Saved openred flow to {filename}")
+        except OSError as e:
+            ctx.log.error(f"Error saving .mitm file: {e}")
+
+addons = [OpenRedirect()]
