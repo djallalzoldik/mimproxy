@@ -85,7 +85,7 @@ class SQLinjec:
 
     def check_altered_reflection(self, flow):
         duration = flow.response.timestamp_end - flow.request.timestamp_start
-        pattern = r'(akira|smith)'
+        pattern = r'(SQL error code: -?\d+|database error: .+|syntax error at .+|permission denied|access violation|query failed: .+|unable to connect to database|invalid query syntax|duplicate entry .+|foreign key constraint fails|unexpected error in query)'
         response_text = flow.response.get_text()
         match = re.search(pattern, response_text, re.IGNORECASE)
         if self.response_time_lower_bound <= duration <= self.response_time_upper_bound or match:
