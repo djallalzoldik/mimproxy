@@ -1,0 +1,97 @@
+from mitmproxy import http, ctx
+from mitmproxy.io import FlowWriter
+import copy
+import os
+import urllib.parse
+import json
+import re
+import time
+
+class AlterResponse:
+    def __init__(self):
+        self.flow_dir = "XSS_flows"
+        os.makedirs(self.flow_dir, exist_ok=True)
+        self.alteration_indicators = ["%22%3E%3Ch1%3Eakira1%3C%2Fh1%3E", "'\"><h1>akira1</h1>", "Jz4iIDxoMT5ha2lyYTE8L2gxPg==", "273e22203c68313e616b697261313c2f68313e", "%00'\"><h1>akira1</h1>", "'\"><h1>akira1</h1>", "'\"><h1>akira1</h1>", "\x22\x3e\x3c\x68\x31\x3e\x61\x6b\x69\x72\x61\x31\x3c\x2f\x68\x31\x3e", "\x27\x22\x3e\x3c\x68\x31\x3e\x61\x6b\x69\x72\x61\x31\x3c\x2f\x68\x31\x3e", "%27%22%3E%3Ch1%3Eakira1%3C%2Fh1%3E", "\u0027\u0022\u003e\u003c\u0068\u0031\u003e\u0061\u006b\u0069\u0072\u0061\u0031\u003c\u002f\u0068\u0031\u003e", "0x27223e3c68313e616b697261313c2f68313e", "\0027\0022\003e\003c\0068\0031\003e\0061\006b\0069\0072\0061\0031\003c\002f\0068\0031\003e", "\047\042\076\074\150\061\076\141\153\151\162\141\061\074\057\150\061\076", "-..----..----.-..-.--...--..-.-.-..-.-.-..-.-..-.-.-....-.--...--.-..-.--....-..-."]
+        self.altered_header = "x-altered"
+
+    def response(self, flow: http.HTTPFlow) -> None:
+        content_type = flow.response.headers.get("Content-Type", "")
+        if "text/html" not in content_type:
+            return  # Skip non-HTML responses
+
+        if self.altered_header in flow.request.headers:
+            self.check_altered_reflection(flow)
+            return
+
+        if flow.request.method == "GET":
+            self.process_parameters(flow, flow.request.query)
+        elif flow.request.method == "POST":
+            self.process_post_request(flow)
+
+    def process_post_request(self, flow):
+        content_type = flow.request.headers.get("Content-Type", "")
+        if "application/x-www-form-urlencoded" in content_type:
+            params = urllib.parse.parse_qs(flow.request.get_text())
+            self.process_parameters(flow, params)
+        elif "application/json" in content_type:
+            try:
+                params = json.loads(flow.request.get_text())
+                if isinstance(params, dict):
+                    self.process_parameters(flow, params)
+            except json.JSONDecodeError:
+                ctx.log.info("JSON decode error")
+
+    def process_parameters(self, flow, params):
+        for param, value in params.items():
+            if isinstance(value, list):  # Handle lists for form data
+                value = value[0]
+            if isinstance(value, str) and value in flow.response.text:
+                self.alter_and_replay(flow, param, value)
+
+    def alter_and_replay(self, original_flow, param, original_value):
+        for indicator in self.alteration_indicators:
+            altered_value = original_value + indicator
+            altered_flow = self.alter_request(original_flow, param, altered_value)
+            if altered_flow:
+                ctx.master.commands.call("replay.client", [altered_flow])
+
+    def alter_request(self, original_flow, param, altered_value):
+        new_request = copy.deepcopy(original_flow.request)
+        if original_flow.request.method == "GET":
+            new_request.query[param] = altered_value
+        else:
+            content_type = new_request.headers.get("Content-Type", "")
+            if "application/x-www-form-urlencoded" in content_type:
+                params = urllib.parse.parse_qs(new_request.get_text())
+                params[param] = [altered_value]
+                new_request.text = urllib.parse.urlencode(params, doseq=True)
+            elif "application/json" in content_type:
+                try:
+                    body = json.loads(new_request.get_text())
+                    if param in body and isinstance(body[param], str):
+                        body[param] = altered_value
+                        new_request.text = json.dumps(body)
+                except json.JSONDecodeError:
+                    pass
+        new_request.headers[self.altered_header] = "true"
+        altered_flow = http.HTTPFlow(original_flow.client_conn, original_flow.server_conn)
+        altered_flow.request = new_request
+        return altered_flow
+
+    def check_altered_reflection(self, flow):
+        pattern = re.compile(r'<h1>akira1', re.IGNORECASE)  # Define the pattern to match specific keywords
+        if pattern.search(flow.response.text):
+            ctx.log.info(f"Altered parameter reflected in the response: {flow.request.url}")
+            self.save_flow(flow)
+
+    def save_flow(self, flow):
+        filename = os.path.join(self.flow_dir, f"{flow.request.method}_captured_request_{int(time.time())}.mitm")
+        try:
+            with open(filename, "wb") as file:
+                fw = FlowWriter(file)
+                fw.add(flow)
+            ctx.log.info(f"Saved altered flow to {filename}")
+        except OSError as e:
+            ctx.log.error(f"Error saving .mitm file: {e}")
+
+addons = [AlterResponse()]
