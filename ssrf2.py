@@ -211,7 +211,7 @@ class SSRF:
             return
         response_text = flow.response.get_text()
         redirect_patterns = [
-            r'(was not found on this server|<title>Google)',
+            r'(This domain is for use in illustrative examples in documents|You may use this domain in literature without prior)',
         ]
         for pattern in redirect_patterns:
             if re.search(pattern, response_text, re.IGNORECASE):
