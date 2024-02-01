@@ -94,7 +94,7 @@ class LFI:
                 break
 
     def save_flow_lfi(self, flow):
-        filename = os.path.join(self.flow_dir_xss, f"lfi_request_{int(time.time())}.mitm")
+        filename = os.path.join(self.flow_dir_lfi, f"lfi_request_{int(time.time())}.mitm")
         try:
             with open(filename, "wb") as file:
                 fw = FlowWriter(file)
