@@ -14,7 +14,7 @@ class AlterResponse:
         self.alteration_indicators_xss = ["%22%3E%3Ch1%3Eakira1%3C%2Fh1%3E", "'\"><h1>akira1</h1>", "Jz4iIDxoMT5ha2lyYTE8L2gxPg==", "273e22203c68313e616b697261313c2f68313e", "%00'\"><h1>akira1</h1>", "'\"><h1>akira1</h1>", "\x22\x3e\x3c\x68\x31\x3e\x61\x6b\x69\x72\x61\x31\x3c\x2f\x68\x31\x3e", "\x27\x22\x3e\x3c\x68\x31\x3e\x61\x6b\x69\x72\x61\x31\x3c\x2f\x68\x31\x3e", "%27%22%3E%3Ch1%3Eakira1%3C%2Fh1%3E", "\u0027\u0022\u003e\u003c\u0068\u0031\u003e\u0061\u006b\u0069\u0072\u0061\u0031\u003c\u002f\u0068\u0031\u003e", "0x27223e3c68313e616b697261313c2f68313e", "\0027\0022\003e\003c\0068\0031\003e\0061\006b\0069\0072\0061\0031\003c\002f\0068\0031\003e", "\047\042\076\074\150\061\076\141\153\151\162\141\061\074\057\150\061\076", "-..----..----.-..-.--...--..-.-.-..-.-.-..-.-..-.-.-....-.--...--.-..-.--....-..-."]
         self.altered_header_xss = "x-altered-xss"
 
-    def response_xss(self, flow: http.HTTPFlow) -> None:
+    def response(self, flow: http.HTTPFlow) -> None:
         content_type = flow.response.headers.get("Content-Type", "")
         if "text/html" not in content_type:
             return  # Skip non-HTML responses
