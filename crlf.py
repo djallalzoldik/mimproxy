@@ -81,7 +81,7 @@ class CRLF:
 ]
 
 
-    def response_crlf(self, flow: http.HTTPFlow) -> None:
+    def response(self, flow: http.HTTPFlow) -> None:
         
 
         # If this is an already altered request, check for CRLF reflection.
