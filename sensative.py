@@ -9,7 +9,7 @@ class CaptureSensitiveInfo:
         self.flow_dir = "captured_flows"
         os.makedirs(self.flow_dir, exist_ok=True)
 
-    def response_sen(self, flow: http.HTTPFlow) -> None:
+    def response(self, flow: http.HTTPFlow) -> None:
         # Convert the response content to a string
         response_text = flow.response.get_text()
 
