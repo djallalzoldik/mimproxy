@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 class crlfResponse:
     def __init__(self):
-        self.scope = "acronis.com"
+        self.scope = "sbb.ch"
         self.flow_dir_crlf = "crlf_flows"
         os.makedirs(self.flow_dir_crlf, exist_ok=True)
         self.hashes_file_path = os.path.join(self.flow_dir_crlf, "request_hashes.txt")
@@ -96,8 +96,9 @@ class crlfResponse:
 
     def request_hash(self, flow, params_string):
         method = flow.request.method
-        url = flow.request.url
-        request_str = f"{method}{url}{params_string}"
+        parsed_url = urlparse(flow.request.url)
+        url = parsed_url.path
+        request_str = f"{method}{url}{params_string}{self.altered_header_crlf}"
         self.params_string = ""
         return hashlib.sha256(request_str.encode('utf-8')).hexdigest()
 
@@ -352,4 +353,3 @@ class crlfResponse:
             ctx.log.error(f"Error saving .mitm file: {e}")
 #---- ---------- end save_flow_crlf function -----------------------------
 addons = [crlfResponse()]
-
