@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 class xssResponse:
     def __init__(self):
-        self.scope = "pubmatic.com"
+        self.scope = "sbb.ch"
         self.flow_dir_xss = "xss_flows"
         os.makedirs(self.flow_dir_xss, exist_ok=True)
         self.hashes_file_path = os.path.join(self.flow_dir_xss, "request_hashes.txt")
@@ -39,8 +39,9 @@ class xssResponse:
 
     def request_hash(self, flow, params_string):
         method = flow.request.method
-        url = flow.request.url
-        request_str = f"{method}{url}{params_string}"
+        parsed_url = urlparse(flow.request.url)
+        url = parsed_url.path
+        request_str = f"{method}{url}{params_string}{self.altered_header_xss}"
         self.params_string = ""
         return hashlib.sha256(request_str.encode('utf-8')).hexdigest()
 
