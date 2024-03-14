@@ -13,10 +13,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 class ssrfResponse:
     def __init__(self):
-        self.scope = "pubmatic.com"
+        self.scope = "sbb.ch"
         self.flow_dir_ssrf = "ssrf_flows"
         self.random_number = None
-        self.oast_domain = "cncfp9diika0gfcuel9gueagg846newad.oast.site"
+        self.oast_domain = "cnnhrm5iika06mfp62bg7pab5unup6t75.oast.fun"
         os.makedirs(self.flow_dir_ssrf, exist_ok=True)
         self.hashes_file_path = os.path.join(self.flow_dir_ssrf, "request_hashes.txt")
         self.processed_requests = self.load_processed_requests()
@@ -55,8 +55,9 @@ class ssrfResponse:
 
     def request_hash(self, flow, params_string):
         method = flow.request.method
-        url = flow.request.url
-        request_str = f"{method}{url}{params_string}"
+        parsed_url = urlparse(flow.request.url)
+        url = parsed_url.path
+        request_str = f"{method}{url}{params_string}{self.altered_header_ssrf}"
         self.params_string = ""
         return hashlib.sha256(request_str.encode('utf-8')).hexdigest()
 
@@ -131,7 +132,6 @@ class ssrfResponse:
                 except:
                     url_pattern = r'\w+:\/\/[^\s]+'
                     if re.search(url_pattern, str(value)):
-                        ctx.log.info("start one one")
                         self.handle_reflection_ssrf(flow, param)
 
 
@@ -311,7 +311,7 @@ class ssrfResponse:
         
         response_text = flow.response.get_text()
         redirect_patterns = [
-            r'page not found',
+            r'57t6punu5bap7gb26pfm60akii5mrhnnc',
         ]
         for pattern in redirect_patterns:
             if re.search(pattern, response_text, re.IGNORECASE):
@@ -351,5 +351,3 @@ class ssrfResponse:
         
 
 addons = [ssrfResponse()]
-
-
