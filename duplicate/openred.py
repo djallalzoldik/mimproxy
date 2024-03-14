@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 class openredResponse:
     def __init__(self):
-        self.scope = "000webhostapp.com"
+        self.scope = "sbb.ch"
         self.flow_dir_openred = "openred_flows"
         self.random_number = None
         self.oast_domain = "akira.com"
@@ -76,8 +76,9 @@ class openredResponse:
 
     def request_hash(self, flow, params_string):
         method = flow.request.method
-        url = flow.request.url
-        request_str = f"{method}{url}{params_string}"
+        parsed_url = urlparse(flow.request.url)
+        url = parsed_url.path
+        request_str = f"{method}{url}{params_string}{self.altered_header_openred}"
         self.params_string = ""
         return hashlib.sha256(request_str.encode('utf-8')).hexdigest()
 
@@ -151,7 +152,6 @@ class openredResponse:
                 except:
                     url_pattern = r'\w+:\/\/[^\s]+'
                     if re.search(url_pattern, str(value)):
-                        ctx.log.info("start one one")
                         self.handle_reflection_openred(flow, param)
 
 
