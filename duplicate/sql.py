@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 class sqlResponse:
     def __init__(self):
-        self.scope = "example.com"
+        self.scope = "sbb.ch"
         self.flow_dir_sql = "sql_flows"
         os.makedirs(self.flow_dir_sql, exist_ok=True)
         self.response_time_lower_bound = 10  # Lower bound of response time in seconds
@@ -36,8 +36,9 @@ class sqlResponse:
 
     def request_hash(self, flow, params_string):
         method = flow.request.method
-        url = flow.request.url
-        request_str = f"{method}{url}{params_string}"
+        parsed_url = urlparse(flow.request.url)
+        url = parsed_url.path
+        request_str = f"{method}{url}{params_string}{self.altered_header_sql}"
         self.params_string = ""
         return hashlib.sha256(request_str.encode('utf-8')).hexdigest()
 
@@ -86,10 +87,10 @@ class sqlResponse:
                     parts = key.split('.')
                     last_part = parts[-1]
                     if re.match(regex_pattern, str(last_part), re.IGNORECASE):
-                        self.handle_reflection_sql(flow, key, decoded_json, orginalgetparam)
+                        self.handle_reflection_sql(flow, key)
                 else:
                     if re.match(regex_pattern, str(key), re.IGNORECASE):
-                        self.handle_reflection_sql(flow, key, decoded_json, orginalgetparam)
+                        self.handle_reflection_sql(flow, key, params)
 
 
         elif method == "GET":
