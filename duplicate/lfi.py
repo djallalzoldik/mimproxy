@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 class lfiResponse:
     def __init__(self):
-        self.scope = "000webhostapp.com"
+        self.scope = "sbb.ch"
         self.flow_dir_lfi = "lfi_flows"
         os.makedirs(self.flow_dir_lfi, exist_ok=True)
         self.hashes_file_path = os.path.join(self.flow_dir_lfi, "request_hashes.txt")
@@ -35,8 +35,9 @@ class lfiResponse:
 
     def request_hash(self, flow, params_string):
         method = flow.request.method
-        url = flow.request.url
-        request_str = f"{method}{url}{params_string}"
+        parsed_url = urlparse(flow.request.url)
+        url = parsed_url.path
+        request_str = f"{method}{url}{params_string}{self.altered_header_lfi}"
         self.params_string = ""
         return hashlib.sha256(request_str.encode('utf-8')).hexdigest()
 
@@ -110,7 +111,6 @@ class lfiResponse:
                 except:
                     url_pattern = r'(\w+:\/\/[^\s]+|\/[^?#\s]*(?=[?#\s]|$))'
                     if re.search(url_pattern, str(value)):
-                        ctx.log.info("start one one")
                         self.handle_reflection_lfi(flow, param)
 
 
@@ -291,10 +291,8 @@ class lfiResponse:
         ]
         for pattern in redirect_patterns:
             if re.search(pattern, response_text, re.IGNORECASE):
-                ctx.log.info("check ffflfi lfi lfi")
                 kind = "regex"
                 self.save_flow_lfi(flow, kind)
-                ctx.log.info("check lfi lfi lfi")
                 break
 
     def save_flow_lfi(self, flow, kind):
